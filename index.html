@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funny Battle City</title>
+  <style>
+    :root {
+      --bg1: #10182a;
+      --bg2: #1a2650;
+      --panel: rgba(22, 29, 48, 0.9);
+      --panel-border: rgba(255,255,255,0.1);
+      --blue: #2ea3ff;
+      --purple: #8c4dff;
+      --gold: #ffd45c;
+      --danger: #ff4f7a;
+      --text: #f5f7ff;
+      --muted: #a9afd1;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #2a3f9f, #0d1224 55%, #090c17 100%);
+      color: var(--text);
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .page {
+      width: min(100%, 780px);
+    }
+
+    header {
+      background: linear-gradient(90deg, #1261de, #7d2ce3, #d63d8a);
+      border-radius: 18px 18px 0 0;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 6vw, 48px);
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      letter-spacing: 5px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    main {
+      display: grid;
+      gap: 18px;
+      padding: 18px;
+      background: rgba(9, 12, 22, 0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 0;
+      border-radius: 0 0 18px 18px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.3);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 120px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 22px;
+    }
+
+    #arena {
+      position: relative;
+      height: 270px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 3px solid #5d73ff;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0 3px, transparent 4px),
+        radial-gradient(circle at 70% 70%, rgba(255,255,255,0.1) 0 3px, transparent 4px),
+        repeating-linear-gradient(45deg, #1e2a4d, #1e2a4d 16px, #23315f 16px, #23315f 32px);
+      touch-action: none;
+    }
+
+    #player, #enemy {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      user-select: none;
+      cursor: default;
+    }
+
+    #player {
+      left: 45%;
+      top: 45%;
+      width: 38px;
+      height: 38px;
+      font-size: 22px;
+      background: #35d8ff;
+      border: 3px solid #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 16px rgba(53,216,255,0.8);
+      transition: left 0.08s, top 0.08s;
+      z-index: 2;
+    }
+
+    #enemy {
+      right: 14%;
+      bottom: 18%;
+      font-size: 34px;
+      z-index: 1;
+    }
+
+    .controls {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      max-width: 240px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .controls button:first-child {
+      grid-column: 2;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .row button {
+      flex: 1;
+      min-width: 130px;
+    }
+
+    button, input {
+      font: inherit;
+      border-radius: 10px;
+    }
+
+    button {
+      border: none;
+      background: linear-gradient(135deg, #1a7bff, #7f34ff);
+      color: white;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:active { transform: scale(0.98); }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .secondary { background: #3f4562; }
+    .danger { background: #a92852; }
+    .gold { background: linear-gradient(135deg, #f7be2a, #e58d17); color: #281400; }
+
+    #status, #boxMessage, #skinMessage, #creatorMessage, #adminMessage {
+      margin-top: 12px;
+      min-height: 24px;
+      text-align: center;
+      color: #dfe3ff;
+    }
+
+    #box {
+      width: 140px;
+      height: 125px;
+      margin: 12px auto;
+      border-radius: 22px;
+      border: 3px solid #7f97ff;
+      background: linear-gradient(145deg, #168cff, #7426cc, #171727);
+      display: grid;
+      place-items: center;
+      font-size: 68px;
+      box-shadow: 0 0 25px rgba(160, 84, 255, 0.7);
+      animation: glow 2s infinite alternate;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 10px rgba(68,136,255,0.4); }
+      to { box-shadow: 0 0 25px rgba(160,84,255,0.9); }
+    }
+
+    #rarity {
+      text-align: center;
+      min-height: 30px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .skin-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .skin {
+      flex: 1 1 100px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 10px;
+      text-align: center;
+    }
+
+    #leaderboard {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0 0;
+    }
+
+    #leaderboard li {
+      padding: 12px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    #admin {
+      display: none;
+      border-color: rgba(255, 212, 92, 0.8);
+    }
+
+    #creatorCode {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: #101827;
+      color: white;
+    }
+
+    .creatorFlash {
+      animation: flash 0.18s infinite alternate;
+    }
+
+    @keyframes flash {
+      from { background: white; color: black; }
+      to { background: black; color: white; }
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 18px 10px 0;
+      font-size: 12px;
+    }
+
+    @media (max-width: 560px) {
+      body { padding: 10px; }
+      main { padding: 12px; }
+      .controls { max-width: 100%; }
+      .row button { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>⚔️ FUNNY BATTLE CITY</h1>
+      <div class="subtitle">FBC · BATTLE · COLLECT · WIN</div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="stats">
+          <div class="stat">💎 <strong id="gems">50</strong><br><span class="small">Juwelen</span></div>
+          <div class="stat">🏆 <strong id="trophies">0</strong><br><span class="small">Trophäen</span></div>
+          <div class="stat">👤 <strong id="playerName">Spieler</strong><br><span class="small">Dein Profil</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>🏟️ Deine Arena</h2>
+
+        <div id="arena">
+          <div id="player">😎</div>
+          <div id="enemy">👾</div>
+        </div>
+
+        <div class="controls">
+          <button onclick="move(0,-15)">⬆️</button>
+          <button onclick="move(-15,0)">⬅️</button>
+          <button onclick="move(0,15)">⬇️</button>
+          <button onclick="move(15,0)">➡️</button>
+        </div>
+
+        <div class="row">
+          <button onclick="battle()">⚔️ Kämpfen</button>
+          <button class="secondary" onclick="resetPlayer()">🔄 Zurücksetzen</button>
+        </div>
+
+        <div id="status">Bewege dich durch die Arena!</div>
+      </section>
+
+      <section class="panel">
+        <h2>🎁 Mystery-Box</h2>
+        <p class="small">
+          Tippe viermal auf die Box. Bei jedem Klick wird die Seltenheit neu ausgelost.
+          Manchmal bleibt sie gleich oder wird schlechter.
+        </p>
+
+        <div id="box" onclick="clickBox()">🎁</div>
+        <div id="rarity"></div>
+        <div id="boxMessage">Tippe auf die Box, um zu starten!</div>
+
+        <div class="row">
+          <button id="openBox" onclick="openReward()" disabled>🎉 Belohnung öffnen</button>
+          <button class="secondary" onclick="resetBox()">Neue Box</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>🎨 Skin-Shop</h2>
+        <div class="skin-list">
+          <div class="skin">😎 Standard<br>Gratis</div>
+          <div class="skin">🤖 Roboter<br>5 💎</div>
+          <div class="skin">🐸 Frosch<br>20 💎</div>
+          <div class="skin">🐲 Drache<br>50 💎</div>
+        </div>
+
+        <div class="row">
+          <button onclick="buySkin('🤖',5)">🤖 Roboter kaufen</button>
+          <button onclick="buySkin('🐸',20)">🐸 Frosch kaufen</button>
+          <button onclick="buySkin('🐲',50)">🐲 Drache kaufen</button>
+        </div>
+        <div id="skinMessage" class="small"></div>
+      </section>
+
+      <section class="panel">
+        <h2>🏆 Ranglisten</h2>
+        <div class="row">
+          <button onclick="showRanks('world')">🌍 Welt</button>
+          <button onclick="showRanks('country')">🇦🇹 Österreich</button>
+          <button onclick="showRanks('club')">👥 Club</button>
+        </div>
+
+        <h3 id="rankTitle">🌍 Weltrangliste</h3>
+        <ol id="leaderboard"></ol>
+        <p class="small">Vorschau: Diese Rangliste enthält nur Beispielspieler. Eine echte Online-Rangliste braucht einen Server.</p>
+      </section>
+
+      <section class="panel">
+        <h2>👑 Creator-Bereich</h2>
+        <p class="small">Gib einen Test-Code ein. Die Creator-Funktionen sind in dieser Demo nicht durch einen sicheren Server geschützt.</p>
+        <input id="creatorCode" placeholder="Creator-Code eingeben" />
+        <button onclick="loginCreator()">Creator-Code bestätigen</button>
+        <div id="creatorMessage" class="small"></div>
+      </section>
+
+      <section class="panel" id="admin">
+        <h2>👑 FBC Creator-Admin</h2>
+        <p>Willkommen im lokalen Testmenü!</p>
+        <div class="stats">
+          <div class="stat">💎 Juwelen<br><strong>Test</strong></div>
+          <div class="stat">🎨 Skins<br><strong>Test</strong></div>
+          <div class="stat">🎁 Boxen<br><strong>Test</strong></div>
+        </div>
+
+        <div class="row">
+          <button onclick="addGems()">+100 Juwelen</button>
+          <button onclick="unlockAllSkins()">Alle Test-Skins</button>
+          <button class="danger" onclick="resetProgress()">Fortschritt löschen</button>
+        </div>
+
+        <div id="adminMessage" class="small"></div>
+      </section>
+    </main>
+
+    <footer>
+      Funny Battle City · FBC Prototyp 0.1<br>
+      Noch kein echtes Online-Multiplayer-Spiel.
+    </footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    let gems = 50;
+    let trophies = 0;
+    let playerX = 45;
+    let playerY = 45;
+    let boxClicks = 0;
+    let selectedRarity = null;
+    let boxReady = false;
+    let creator = false;
+    let unlockedSkins = ["😎"];
+    let currentSkin = "😎";
+
+    const rarities = [
+      { name: "Normal", weight: 400, color: "#ffffff" },
+      { name: "Selten", weight: 250, color: "#46a8ff" },
+      { name: "Super selten", weight: 180, color: "#a85cff" },
+      { name: "Episch", weight: 100, color: "#c04cff" },
+      { name: "Mythisch", weight: 50, color: "#ff4545" },
+      { name: "Legendär", weight: 15, color: "#ffcc33" },
+      { name: "Mega legendär", weight: 4, color: "#ff7b22" },
+      { name: "Ultra legendär", weight: 0.9, color: "#ff47b8" },
+      { name: "Creator", weight: 0.1, color: "#ffffff" }
+    ];
+
+    const sampleRanks = {
+      world: [
+        ["1. Maxi", 9999],
+        ["2. BattleKing", 8750],
+        ["3. DragonPro", 8200],
+        ["4. FBC_Fan", 7900],
+        ["5. Spieler123", 7200]
+      ],
+      country: [
+        ["1. AustriaPro", 9000],
+        ["2. Maxi", 8100],
+        ["3. Spieler123", 7000]
+      ],
+      club: [
+        ["1. Maxi", 5000],
+        ["2. FBC_Fan", 4200],
+        ["3. DragonPro", 3900]
+      ]
+    };
+
+    function updateStats() {
+      $("gems").textContent = gems;
+      $("trophies").textContent = trophies;
+    }
+
+    function move(dx, dy) {
+      const arena = $("arena");
+      const player = $("player");
+
+      playerX += (dx / arena.clientWidth) * 100;
+      playerY += (dy / arena.clientHeight) * 100;
+
+      playerX = Math.max(0, Math.min(90, playerX));
+      playerY = Math.max(0, Math.min(85, playerY));
+
+      player.style.left = playerX + "%";
+      player.style.top = playerY + "%";
+    }
+
+    function resetPlayer() {
+      playerX = 45;
+      playerY = 45;
+      $("player").style.left = playerX + "%";
+      $("player").style.top = playerY + "%";
+      $("status").textContent = "Du bist zurück in der Mitte!";
+    }
+
+    function battle() {
+      const won = Math.random() < 0.6;
+
+      if (won) {
+        trophies += 10;
+        gems += 2;
+        $("status").textContent = "🎉 Sieg! +10 Trophäen und +2 Juwelen!";
+      } else {
+        trophies = Math.max(0, trophies - 3);
+        $("status").textContent = "👾 Knapp verloren! Du verlierst 3 Trophäen.";
+      }
+
+      updateStats();
+    }
+
+    function drawRarity(rarity) {
+      $("rarity").textContent = rarity.name;
+      $("rarity").style.color = rarity.color;
+      $("boxMessage").textContent = "Klick " + boxClicks + " von 4. Tippe weiter!";
+    }
+
+    function rollRarity() {
+      const total = rarities.reduce((sum, r) => sum + r.weight, 0);
+      let roll = Math.random() * total;
+
+      for (const rarity of rarities) {
+        roll -= rarity.weight;
+        if (roll <= 0) return rarity;
+      }
+      return rarities[0];
+    }
+
+    function clickBox() {
+      if (boxReady) {
+        $("boxMessage").textContent = "Öffne zuerst die fertige Box oder starte eine neue.";
+        return;
+      }
+
+      boxClicks++;
+      selectedRarity = rollRarity();
+      drawRarity(selectedRarity);
+
+      if (selectedRarity.name === "Creator") {
+        document.body.classList.add("creatorFlash");
+        $("box").textContent = "👑";
+        $("boxMessage").textContent = "✨ UNGLAUBLICH! Eine CREATOR-BOX! ✨";
+      } else {
+        document.body.classList.remove("creatorFlash");
+        $("box").textContent = "🎁";
+      }
+
+      if (boxClicks >= 4) {
+        boxReady = true;
+        $("openBox").disabled = false;
+        $("boxMessage").textContent = "Alle vier Klicks verbraucht! Öffne deine Belohnung.";
+      }
+    }
+
+    function openReward() {
+      if (!boxReady || !selectedRarity) return;
+
+      let reward = "";
+
+      if (selectedRarity.name === "Creator") {
+        reward = "Du hast einen seltenen Creator-Test-Skin erhalten!";
+        unlockedSkins.push("👑");
+      } else if (selectedRarity.name === "Ultra legendär") {
+        reward = "Ultra legendärer Skin freigeschaltet!";
+        unlockedSkins.push("🐉");
+      } else if (selectedRarity.name === "Mega legendär") {
+        reward = "Mega legendärer Skin freigeschaltet!";
+        unlockedSkins.push("🦄");
+      } else if (selectedRarity.name === "Legendär") {
+        reward = "Legendärer Skin freigeschaltet!";
+        unlockedSkins.push("🐲");
+      } else if (selectedRarity.name === "Mythisch") {
+        gems += 20;
+        reward = "+20 Juwelen!";
+      } else if (selectedRarity.name === "Episch") {
+        gems += 10;
+        reward = "+10 Juwelen!";
+      } else if (selectedRarity.name === "Super selten") {
+        gems += 5;
+        reward = "+5 Juwelen!";
+      } else if (selectedRarity.name === "Selten") {
+        gems += 3;
+        reward = "+3 Juwelen!";
+      } else {
+        gems += 1;
+        reward = "+1 Juwel!";
+      }
+
+      $("boxMessage").textContent = "🎉 " + reward;
+      $("openBox").disabled = true;
+      document.body.classList.remove("creatorFlash");
+      updateStats();
+    }
+
+    function resetBox() {
+      boxClicks = 0;
+      selectedRarity = null;
+      boxReady = false;
+
+      $("rarity").textContent = "";
+      $("box").textContent = "🎁";
+      $("boxMessage").textContent = "Tippe auf die Box, um zu starten!";
+      $("openBox").disabled = true;
+      document.body.classList.remove("creatorFlash");
+    }
+
+    function buySkin(skin, price) {
+      if (unlockedSkins.includes(skin)) {
+        currentSkin = skin;
+        $("player").textContent = skin;
+        $("skinMessage").textContent = "Skin ausgerüstet!";
+        return;
+      }
+
+      if (gems < price) {
+        $("skinMessage").textContent = "Du brauchst mehr Juwelen!";
+        return;
+      }
+
+      gems -= price;
+      unlockedSkins.push(skin);
+      currentSkin = skin;
+      $("player").textContent = skin;
+      $("skinMessage").textContent = "Skin gekauft und ausgerüstet!";
+      updateStats();
+    }
+
+    function showRanks(type) {
+      const titles = {
+        world: "🌍 Weltrangliste",
+        country: "🇦🇹 Österreich",
+        club: "👥 Clubrangliste"
+      };
+
+      $("rankTitle").textContent = titles[type];
+      $("leaderboard").innerHTML = sampleRanks[type]
+        .map(([name, score]) => `<li>${name} <span style="float:right">🏆 ${score}</span></li>`)
+        .join("");
+    }
+
+    function loginCreator() {
+      const code = $("creatorCode").value.trim().toUpperCase();
+      const validCodes = ["FBC-MATTEO-01", "FBC-MAXI-02"];
+
+      if (validCodes.includes(code)) {
+        creator = true;
+        $("admin").style.display = "block";
+        $("creatorMessage").textContent = "Creator-Testmodus aktiviert!";
+        $("creatorCode").value = "";
+      } else {
+        $("creatorMessage").textContent = "Dieser Test-Code ist nicht gültig.";
+      }
+    }
+
+    function addGems() {
+      if (!creator) return;
+      gems += 100;
+      updateStats();
+      $("adminMessage").textContent = "100 Test-Juwelen hinzugefügt!";
+    }
+
+    function unlockAllSkins() {
+      if (!creator) return;
+      unlockedSkins = ["😎", "🤖", "🐸", "🐲", "👑", "🐉", "🦄"];
+      $("adminMessage").textContent = "Alle Test-Skins wurden freigeschaltet.";
+    }
+
+    function resetProgress() {
+      if (!creator) return;
+      if (!confirm("Möchtest du deinen Test-Fortschritt wirklich löschen?")) return;
+
+      gems = 50;
+      trophies = 0;
+      unlockedSkins = ["😎"];
+      currentSkin = "😎";
+      $("player").textContent = "😎";
+      updateStats();
+      $("adminMessage").textContent = "Test-Fortschritt zurückgesetzt.";
+    }
+
+    document.addEventListener("keydown", (event) => {
+      switch (event.key) {
+        case "ArrowUp": move(0, -15); break;
+        case "ArrowDown": move(0, 15); break;
+        case "ArrowLeft": move(-15, 0); break;
+        case "ArrowRight": move(15, 0); break;
+      }
+    });
+
+    updateStats();
+    showRanks("world");
+  </script>
+</body>
+</html>
